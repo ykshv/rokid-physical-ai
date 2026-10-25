@@ -1,3 +1,6 @@
+---
+description: Register Rokid camera images and RealSense depth observations to a robot base using measured intrinsics, workspace markers, and tabletop geometry.
+---
 # Calibration and perception
 
 ## Equipment

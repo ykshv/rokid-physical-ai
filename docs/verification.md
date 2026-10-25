@@ -1,3 +1,6 @@
+---
+description: Dated Rokid device results, automated checks, and open acceptance gates for voice, gestures, network recovery, and physical robot manipulation.
+---
 # Verification
 
 This page separates implementation, software checks, simulation, and physical evidence. Updated 2026-10-25.
@@ -8,7 +11,7 @@ This page separates implementation, software checks, simulation, and physical ev
 | Server contracts and failure handling | 34 automated tests passed locally; current CI is authoritative for subsequent revisions |
 | Android | APK compiled and lint passed; installed on stock firmware; operator confirmed HUD placement, audible playback and local voice shutdown |
 | OpenAI session | API key not configured in the development environment; live provider test pending |
-| ROS gateway | C++ / ROS 2 Jazzy build and policy tests; see CI for the current revision |
+| ROS gateway | C++ / ROS 2 Jazzy build and 7 policy tests passed locally; see CI for the current revision |
 | RealSense Python binding | `pyrealsense2` 2.59.1.11053 imports on Python 3.14.7; no camera attached |
 | Robot simulation | Not yet claimed as verified |
 | Physical FR3 / xArm6 | No arm available; no physical manipulation tests performed |

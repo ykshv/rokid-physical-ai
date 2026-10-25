@@ -341,9 +341,7 @@ public:
     });
     server.Post("/v1/scene", [this](const auto& request, auto& response) {
       auto incoming = json::parse(request.body);
-      if (incoming.at("version") != 1 || incoming.at("frame_id") != "robot_base" ||
-          incoming.at("objects").size() > 20 || incoming.at("zones").size() > 10)
-        throw std::runtime_error("invalid_scene");
+      rokid::check_scene(incoming);
       auto age = now_seconds() - rokid::number(incoming.at("observed_at"));
       if (age < -0.1 || age > 1) throw std::runtime_error("scene_clock_not_synchronized");
       std::lock_guard lock(mutex_);

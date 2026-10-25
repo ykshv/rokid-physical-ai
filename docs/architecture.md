@@ -1,3 +1,6 @@
+---
+description: Typed scene and task contracts connect Rokid glasses, a multimodal agent, and a robot gateway with confirmation, bounded media, and durable recovery.
+---
 # Architecture
 
 ## Three authorities

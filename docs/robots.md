@@ -1,3 +1,6 @@
+---
+description: Configure Franka FR3 or UFACTORY xArm6 with ROS 2 Jazzy, MoveIt, authenticated scene input, an independent motion latch, and hardware qualification.
+---
 # Robot integration
 
 ## Reference profiles

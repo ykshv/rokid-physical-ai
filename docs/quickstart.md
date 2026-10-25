@@ -1,3 +1,6 @@
+---
+description: Install the Rokid APK, pair it with a Python 3.14 agent over TLS, and verify local camera and audio before enabling the voice agent.
+---
 # Get started
 
 ## Agent

@@ -3,7 +3,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Rokid Physical AI">
 <meta property="og:title" content="{{ page.title | e }} · Rokid Physical AI">
+{% if page.meta is defined and page.meta.description is defined %}
+<meta property="og:description" content="{{ page.meta.description | e }}">
+{% else %}
 <meta property="og:description" content="{{ config.site_description | e }}">
+{% endif %}
 <meta property="og:url" content="{{ page.canonical_url }}">
 <meta name="twitter:card" content="summary">
 {% endblock %}

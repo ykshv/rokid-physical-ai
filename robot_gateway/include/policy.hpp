@@ -5,6 +5,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <set>
 #include <nlohmann/json.hpp>
 
 namespace rokid {
@@ -28,9 +29,33 @@ inline json find_id(const json& collection, const std::string& id) {
   for (const auto& object : collection) if (object.at("id") == id) return object;
   throw std::runtime_error("unknown_scene_id");
 }
+inline void check_scene(const json& scene) {
+  if (scene.at("version") != 1 || scene.at("frame_id") != "robot_base" ||
+      !scene.at("calibrated").is_boolean() || !scene.at("revision").is_string() ||
+      !scene.at("calibration_id").is_string() || !scene.at("objects").is_array() ||
+      !scene.at("zones").is_array() || scene.at("objects").size() > 20 ||
+      scene.at("zones").empty() || scene.at("zones").size() > 10)
+    throw std::runtime_error("invalid_scene");
+  number(scene.at("observed_at"));
+  std::set<std::string> ids;
+  for (const auto* collection : {&scene.at("objects"), &scene.at("zones")}) {
+    for (const auto& entry : *collection) {
+      auto id = entry.at("id").get<std::string>();
+      if (id.empty() || id.size() > 80 || !ids.insert(id).second)
+        throw std::runtime_error("invalid_scene_id");
+      xyz(entry.at("center"));
+      if (entry.contains("size")) {
+        auto dims = xyz(entry.at("size"));
+        if (*std::min_element(dims.begin(), dims.end()) <= 0 || number(entry.at("grasp_width")) <= 0)
+          throw std::runtime_error("invalid_object_geometry");
+      } else if (number(entry.at("radius")) <= 0) throw std::runtime_error("invalid_zone");
+    }
+  }
+}
 inline void check_request(const json& request, const json& scene, double now,
                           const std::vector<double>& lo, const std::vector<double>& hi,
                           double max_width) {
+  check_scene(scene);
   if (request.at("version") != 1 || !scene.at("calibrated").get<bool>())
     throw std::runtime_error("uncalibrated_or_unsupported_version");
   auto age = now - number(scene.at("observed_at"));
