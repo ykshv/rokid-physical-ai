@@ -3,6 +3,9 @@ message: Please cite this software when using it in your work.
 title: Rokid Physical AI
 type: software
 authors:
+  - family-names: Yakushev
+    given-names: Igor
+    website: https://igor-ya.ru/
   - name: Rokid Physical AI contributors
 repository-code: https://github.com/ykshv/rokid-physical-ai
 url: https://ykshv.github.io/rokid-physical-ai/

@@ -1,9 +1,10 @@
 site_name: Rokid Physical AI
 site_description: Voice and gesture interface for robot arms using Rokid smart glasses, Python 3.14, and ROS 2.
 site_url: https://ykshv.github.io/rokid-physical-ai/
+site_author: Igor Yakushev
 repo_url: https://github.com/ykshv/rokid-physical-ai
 repo_name: ykshv/rokid-physical-ai
-copyright: Rokid Physical AI contributors
+copyright: 'Created by <a href="https://igor-ya.ru/">Igor Yakushev</a> · Apache-2.0'
 theme:
   name: material
   custom_dir: docs/overrides
@@ -13,6 +14,8 @@ theme:
     accent: lime
   features: [navigation.sections, content.code.copy, navigation.top]
 plugins: [search]
+extra:
+  project_languages: [Python, Kotlin, C++]
 markdown_extensions:
   - admonition
   - pymdownx.superfences

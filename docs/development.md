@@ -53,3 +53,13 @@ Before handing off, inspect `git diff --check`, the complete diff and `git statu
 A development release identifies the exact Git revision, tested lockfile/toolchain, APK signing status and SHA-256 checksums. Its notes link to verification evidence. Pin the same revision for the agent, generated schemas, gateway/profile and APK when reproducing a failure; provider model and prompt identifiers are recorded in source. Model aliases are not immutable provider weights and require fresh live evaluation when changed.
 
 Rollback does not undo physical side effects. Stop the active session and gateway, inspect/reconcile uncertain operations, preserve the state database/journal, then restore a compatible application revision. Never delete the journal or replace it with a clean file to make a rollback appear successful. See [operations](operations.md).
+
+## Public website and search
+
+Keep `https://ykshv.github.io/rokid-physical-ai/` as the canonical documentation URL and `https://ykshv.github.io/rokid-physical-ai/sitemap.xml` as its sitemap. The GitHub About URL, generated canonical links and sitemap must agree. `tools/check_publication.py` validates navigation pages, unique titles/descriptions, social metadata, visible author links and homepage structured data before deployment.
+
+The homepage's `SoftwareSourceCode` describes this repository and uses the same author identity as the personal website, `https://igor-ya.ru/#person`. Keep authorship visible, preserve truthful qualification limits, and link only to existing relevant articles. The shared documentation theme and README structure also apply to [Rula](https://ykshv.github.io/rula/).
+
+GitHub project Pages live under a path: crawler policy belongs to the origin's `/robots.txt`, not a file inside the project directory. A missing origin robots file does not itself block indexing. Do not add an ineffective project-level file or special AI text files as an indexing requirement.
+
+After publication, inspect response headers, canonical HTML and sitemap. A maintainer with Search Console or Bing Webmaster Tools access can submit the sitemap and inspect indexing. Passing HTTP/build checks establishes eligibility, not guaranteed indexing, rankings or AI citations.
