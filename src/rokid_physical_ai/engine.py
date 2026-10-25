@@ -1,6 +1,7 @@
 """Single-session task authority with durable idempotency and explicit confirmation."""
 
 import asyncio
+import math
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -33,15 +34,21 @@ class TaskEngine:
         self.preview_scene: SceneObservation | None = None
         self.runner: asyncio.Task | None = None
         self.closed = False
+        self.stop_epoch = 0
+        self.stopping = 0
+        self.submitted = False
 
     async def propose(self, proposal: Proposal) -> dict:
         async with self.lock:
-            if self.closed or self.pending or self.active:
+            if self.closed or self.stopping or self.pending or self.active:
                 raise ValueError("session_busy_or_closed")
             if any(t.state == TaskState.UNCERTAIN for t in self.store.tasks()):
                 raise ValueError("operator_reconciliation_required")
             self.frames.get(proposal.keyframe_id)
+            epoch = self.stop_epoch
             scene = await self.gateway.scene()
+            if self.closed or epoch != self.stop_epoch:
+                raise ValueError("proposal_interrupted")
             if (
                 not scene.calibrated
                 or scene.revision != proposal.scene_revision
@@ -82,23 +89,30 @@ class TaskEngine:
 
     async def confirm(self) -> bool:
         async with self.lock:
-            if (
-                self.closed
-                or not self.pending
-                or self.preview_played_at is None
-                or time.monotonic() - self.preview_played_at > 15
-            ):
+            if self.closed or self.stopping or not self.pending or self.preview_played_at is None:
+                return False
+            if time.monotonic() - self.preview_played_at > 15:
+                await self._cancel_pending("confirmation_expired")
                 return False
             task = self.store.get(self.pending)
+            epoch = self.stop_epoch
             current = await self.gateway.scene()
+            if self.closed or epoch != self.stop_epoch:
+                return False
             previous = self.preview_scene
             if previous is None or not current.calibrated:
-                raise ValueError("calibration_lost")
+                await self._cancel_pending("calibration_lost")
+                return False
             old = next(o for o in previous.objects if o.id == task.intent.object_id)
             new = next((o for o in current.objects if o.id == old.id), None)
             if (
                 new is None
                 or old.center.distance(new.center) > 0.005
+                or old.size.distance(new.size) > 0.005
+                or abs(math.remainder(old.yaw - new.yaw, math.tau)) > 0.05
+                or abs(old.grasp_width - new.grasp_width) > 0.005
+                or old.label != new.label
+                or current.frame_id != previous.frame_id
                 or current.calibration_id != previous.calibration_id
                 or current.zones != previous.zones
                 or not 0 <= time.time() - current.observed_at <= 2
@@ -106,6 +120,7 @@ class TaskEngine:
                 await self._cancel_pending("scene_changed_confirm_again")
                 return False
             self.active, self.pending = task.id, None
+            self.submitted = False
             task = task.model_copy(update={"state": TaskState.EXECUTING, "updated_at": time.time()})
             self.store.put(task)
             request = MotionRequest(
@@ -119,9 +134,14 @@ class TaskEngine:
 
     async def _execute(self, request: MotionRequest) -> None:
         try:
+            self.submitted = True
             result = await self.gateway.execute(request)
             deadline = time.monotonic() + 90
-            while result.state == "executing":
+            while True:
+                if result.operation_id != request.operation_id:
+                    raise ValueError("gateway_operation_mismatch")
+                if result.state != "executing":
+                    break
                 if time.monotonic() > deadline:
                     await self.gateway.stop()
                     raise TimeoutError("execution_deadline")
@@ -137,11 +157,15 @@ class TaskEngine:
                 await self.gateway.stop()
             except Exception:
                 reason = "gateway_result_and_stop_unconfirmed"
-        task = self.store.get(request.operation_id)
+        await self._finish(request.operation_id, state, reason)
+
+    async def _finish(self, operation_id: str, state: TaskState, reason: str | None) -> None:
+        task = self.store.get(operation_id)
         self.store.put(
             task.model_copy(update={"state": state, "reason": reason, "updated_at": time.time()})
         )
-        self.active = None
+        if self.active == operation_id:
+            self.active = None
         await self.emit(
             {"type": "task.result", "task_id": task.id, "state": state, "reason": reason}
         )
@@ -159,14 +183,43 @@ class TaskEngine:
                 )
             )
             self.pending = None
+            self.preview_scene = None
+            self.preview_played_at = None
             await self.emit(
                 {"type": "task.result", "task_id": task.id, "state": "cancelled", "reason": reason}
             )
 
     async def stop(self, reason: str = "user_stop") -> None:
-        async with self.lock:
-            await self._cancel_pending(reason)
+        # Invalidate reads already in flight before yielding. Neither the scene lookup
+        # lock nor a disconnected UI may delay the independent gateway stop request.
+        self.stop_epoch += 1
+        self.stopping += 1
+        runner = self.runner
+        if runner and not runner.done():
+            runner.cancel()
+        try:
             await self.gateway.stop()
+        except Exception:
+            self.closed = True
+            raise
+        finally:
+            try:
+                if runner:
+                    await asyncio.gather(runner, return_exceptions=True)
+                async with self.lock:
+                    if self.active:
+                        # Cancellation before the coroutine's first instruction skips
+                        # its exception handler. Never leave that durable task executing.
+                        await self._finish(
+                            self.active,
+                            TaskState.UNCERTAIN if self.submitted else TaskState.CANCELLED,
+                            "stopped_reconcile_gateway"
+                            if self.submitted
+                            else "stopped_before_submit",
+                        )
+                    await self._cancel_pending(reason)
+            finally:
+                self.stopping -= 1
 
     async def close(self) -> None:
         self.closed = True

@@ -22,6 +22,7 @@ from .frames import FrameBuffer
 from .gateway import Gateway
 from .narration import synthesize
 from .perception import Calibration, GlassesCalibration, annotate_glasses
+from .protocol import CONTROL_EVENT, AudioPlayed, Diagnostics, PreviewPlayed
 from .realtime import Realtime
 from .speech import LocalCommands
 from .store import Store
@@ -300,6 +301,8 @@ class Session:
 
 
 def create_app(settings: Settings, gateway: Gateway | None = None) -> FastAPI:
+    if settings.diagnostic and gateway is not None:
+        raise ValueError("diagnostic_mode_must_not_connect_to_robot")
     store = Store(settings.state_dir / "agent.sqlite3")
     store.recover()
     sessions: dict[str, Session] = {}
@@ -345,41 +348,43 @@ def create_app(settings: Settings, gateway: Gateway | None = None) -> FastAPI:
         if sessions:
             await ws.close(code=1008, reason="one_operator_session_allowed")
             return
-        await ws.accept()
+        # Reserve before the first transport await: two simultaneous handshakes
+        # must not both observe an empty registry and become motion operators.
         session = Session(device, ws, store, gateway, settings)
         sessions[session.id] = session
-        watch = asyncio.create_task(session.watchdog())
+        workers: list[asyncio.Task] = []
 
         async def read_control():
             while True:
-                event = await ws.receive_json()
-                kind = event.get("type")
+                event = CONTROL_EVENT.validate_python(await ws.receive_json())
+                kind = event.type
                 if kind == "heartbeat":
                     session.last_heartbeat = time.monotonic()
                 elif kind == "session.start":
                     await session.start()
-                elif kind == "preview.played":
-                    session.preview_played(str(event.get("task_id", "")))
-                elif kind == "audio.played":
-                    if session.realtime and event.get("item_id") == session.realtime.output_item:
-                        session.realtime.played_ms = max(0, min(int(event["milliseconds"]), 60000))
+                elif isinstance(event, PreviewPlayed):
+                    session.preview_played(event.task_id)
+                elif isinstance(event, AudioPlayed):
+                    if session.realtime and event.item_id == session.realtime.output_item:
+                        session.realtime.played_ms = min(event.milliseconds, 60000)
                 elif kind == "session.stop":
                     break
-                elif kind == "diagnostics":
+                elif isinstance(event, Diagnostics):
                     # An allowlist prevents arbitrary client dumps entering logs.
                     logger.info(
                         "device_capabilities camera=%s aec=%s tts_ru=%s",
-                        event.get("camera"),
-                        event.get("aec"),
-                        event.get("tts_ru"),
+                        event.camera,
+                        event.aec,
+                        event.tts_ru,
                     )
                 else:
                     raise ValueError("unknown_control_event")
 
-        reader = asyncio.create_task(read_control())
         try:
+            await asyncio.wait_for(ws.accept(), 2)
+            workers = [asyncio.create_task(read_control()), asyncio.create_task(session.watchdog())]
             await session.emit({"type": "session.ready", "session_id": session.id})
-            done, _ = await asyncio.wait([reader, watch], return_when=asyncio.FIRST_COMPLETED)
+            done, _ = await asyncio.wait(workers, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 task.result()
         except WebSocketDisconnect:
@@ -391,13 +396,15 @@ def create_app(settings: Settings, gateway: Gateway | None = None) -> FastAPI:
                     {"type": "error", "code": "session_dependency_or_protocol_error"}
                 )
         finally:
-            reader.cancel()
-            watch.cancel()
-            await asyncio.gather(reader, watch, return_exceptions=True)
-            await session.close()
-            sessions.pop(session.id, None)
-            with contextlib.suppress(Exception):
-                await ws.close()
+            for worker in workers:
+                worker.cancel()
+            await asyncio.gather(*workers, return_exceptions=True)
+            try:
+                await session.close()
+            finally:
+                sessions.pop(session.id, None)
+                with contextlib.suppress(Exception):
+                    await ws.close()
 
     @app.websocket("/v1/media/{session_id}")
     async def media(ws: WebSocket, session_id: str):
@@ -408,9 +415,9 @@ def create_app(settings: Settings, gateway: Gateway | None = None) -> FastAPI:
         if session is None or session.device != device or session.media:
             await ws.close(code=1008)
             return
-        await ws.accept()
         session.media = ws
         try:
+            await asyncio.wait_for(ws.accept(), 2)
             while True:
                 message = await ws.receive()
                 if message["type"] == "websocket.disconnect":

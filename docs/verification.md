@@ -8,10 +8,10 @@ This page separates implementation, software checks, simulation, and physical ev
 | Area | Evidence |
 | --- | --- |
 | Python runtime | Python 3.14.7; NumPy and OpenCV import verified |
-| Server contracts and failure handling | 34 automated tests passed locally; current CI is authoritative for subsequent revisions |
+| Server contracts and failure handling | Automated Python tests cover boundaries, stop/confirmation races, session ownership, recovery and response identity; current CI is authoritative for each revision |
 | Android | APK compiled and lint passed; installed on stock firmware; operator confirmed HUD placement, audible playback and local voice shutdown |
 | OpenAI session | API key not configured in the development environment; live provider test pending |
-| ROS gateway | C++ / ROS 2 Jazzy build and 7 policy tests passed locally; see CI for the current revision |
+| ROS gateway | C++ / ROS 2 Jazzy build, policy and persistence-failure tests; shared scene-validation cases run in Python and C++; see CI for each revision |
 | RealSense Python binding | `pyrealsense2` 2.59.1.11053 imports on Python 3.14.7; no camera attached |
 | Robot simulation | Not yet claimed as verified |
 | Physical FR3 / xArm6 | No arm available; no physical manipulation tests performed |
@@ -30,6 +30,8 @@ The Android surface reports 480×640 at density 240. The HUD uses a small centra
 The 30-minute combined media/voice soak, echo/barge-in measurements, phone-call arbitration, network recovery and full cloud conversation are **not yet accepted**. A short tone test is not a sustained duplex-audio test. No p95 latency or gesture accuracy is claimed.
 
 ## Acceptance gates
+
+Software checks are reproducible through the [development workflow](development.md). Mock gateways and injected journal failures verify application behavior; they do not exercise controller timing, power loss or physical stopping distance.
 
 - A 30-minute explicitly started device session with camera, microphone, speaker, interruption and bounded memory.
 - At least 100 labelled gesture/command episodes, separating target selection, destination selection and correct clarification. Synthetic contract tests do not count as gesture-model evaluation.

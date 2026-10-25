@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#include <fstream>
 #include "policy.hpp"
+#include "journal.hpp"
 
 TEST(Policy, RejectsNonfiniteCoordinates) {
   EXPECT_THROW(rokid::number(rokid::json("NaN")), std::runtime_error);
@@ -14,9 +16,9 @@ TEST(Policy, WorkspaceBoundsAreInclusive) {
 static rokid::json scene() {
   return rokid::json::parse(R"({"version":1,"frame_id":"robot_base","revision":"r1",
     "calibration_id":"c1","calibrated":true,"observed_at":100,
-    "objects":[{"id":"cube","center":{"x":0.35,"y":0,"z":0.025},
+    "objects":[{"id":"cube","label":"cube","center":{"x":0.35,"y":0,"z":0.025},
       "size":{"x":0.04,"y":0.04,"z":0.05},"grasp_width":0.04}],
-    "zones":[{"id":"tray","center":{"x":0.5,"y":0,"z":0},"radius":0.06}]})");
+    "zones":[{"id":"tray","label":"tray","center":{"x":0.5,"y":0,"z":0},"radius":0.06}]})");
 }
 static rokid::json request(const rokid::json& s) {
   return {{"version",1}, {"expires_at",102}, {"scene",s},
@@ -49,4 +51,42 @@ TEST(Policy, RejectsMalformedProducerScene) {
   EXPECT_THROW(rokid::check_scene(s), std::runtime_error);
   s = scene(); s["zones"][0]["id"] = "cube";
   EXPECT_THROW(rokid::check_scene(s), std::runtime_error);
+}
+
+TEST(Policy, SharedSceneContractCases) {
+  std::ifstream input(SCENE_FIXTURE_PATH);
+  ASSERT_TRUE(input.good());
+  auto fixture = rokid::json::parse(input);
+  for (const auto& test : fixture.at("cases")) {
+    SCOPED_TRACE(test.at("name").get<std::string>());
+    auto observation = fixture.at("scene").patch(test.at("patch"));
+    if (test.at("accepted").get<bool>()) EXPECT_NO_THROW(rokid::check_scene(observation));
+    else EXPECT_ANY_THROW(rokid::check_scene(observation));
+  }
+}
+
+TEST(Journal, FailedWriteNeverReportsSuccessfulExecution) {
+  rokid::json record = {{"operation_id", "task"}, {"state", "executing"}};
+  EXPECT_THROW(rokid::persist_operation_state(record, "succeeded", nullptr, [] {
+    throw std::runtime_error("disk_full");
+  }), std::runtime_error);
+  EXPECT_EQ(record.at("state"), "uncertain");
+  EXPECT_EQ(record.at("operation_id"), "task");
+}
+
+TEST(Journal, FailedWriteBeforeMotionRemainsUncertain) {
+  rokid::json record = {{"operation_id", "task"}, {"state", "executing"}};
+  EXPECT_THROW(rokid::persist_operation_state(record, "executing", nullptr, [] {
+    throw std::runtime_error("directory_sync_failed");
+  }), std::runtime_error);
+  EXPECT_EQ(record.at("state"), "uncertain");
+}
+
+TEST(Journal, SuccessfulWriteRetainsTerminalResult) {
+  rokid::json record = {{"operation_id", "task"}, {"state", "executing"}};
+  bool persisted = false;
+  rokid::persist_operation_state(record, "succeeded", nullptr, [&] { persisted = true; });
+  EXPECT_TRUE(persisted);
+  EXPECT_EQ(record.at("state"), "succeeded");
+  EXPECT_TRUE(record.at("reason").is_null());
 }

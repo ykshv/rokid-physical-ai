@@ -11,6 +11,7 @@ from rokid_physical_ai.app import Settings, create_app
 from rokid_physical_ai.contracts import TaskIntent, Vector3
 from rokid_physical_ai.frames import FrameBuffer
 from rokid_physical_ai.perception import rigid_transform
+from rokid_physical_ai.protocol import CONTROL_EVENT
 
 
 def test_pairing_code_is_single_use_and_credentials_hashed(store):
@@ -113,3 +114,27 @@ def test_real_control_media_protocol_without_provider_or_camera(tmp_path):
                 media.send_bytes(b"\0" * 960)
                 control.send_json({"type": "heartbeat"})
                 control.send_json({"type": "session.stop"})
+
+
+def test_diagnostic_cannot_attach_motion_gateway(tmp_path, gateway):
+    with pytest.raises(ValueError, match="diagnostic_mode"):
+        create_app(Settings(tmp_path, diagnostic=True), gateway)
+    assert not gateway.operations
+    assert gateway.stopped == 0
+
+
+@pytest.mark.parametrize(
+    "event",
+    [
+        [],
+        {"type": "heartbeat", "confirmed": True},
+        {"type": "preview.played", "task_id": "invalid/id"},
+        {"type": "audio.played", "item_id": "audio_1", "milliseconds": True},
+        {"type": "audio.played", "item_id": "audio_1", "milliseconds": -1},
+        {"type": "diagnostics", "camera": "untrusted\nlog", "aec": True, "tts_ru": False},
+        {"type": "diagnostics", "camera": "640x480-YUV", "aec": "yes", "tts_ru": False},
+    ],
+)
+def test_control_messages_reject_malformed_fields(event):
+    with pytest.raises(ValidationError):
+        CONTROL_EVENT.validate_python(event)

@@ -98,7 +98,7 @@ def main() -> None:
     if args.command == "serve":
         cert, key = ensure_tls(args.state_dir, args.host)
         gateway = None
-        if os.environ.get("ROBOT_GATEWAY_URL"):
+        if not args.diagnostic and os.environ.get("ROBOT_GATEWAY_URL"):
             gateway = HttpGateway(
                 os.environ["ROBOT_GATEWAY_URL"],
                 os.environ["ROBOT_GATEWAY_TOKEN"],
@@ -214,6 +214,7 @@ def main() -> None:
             TaskIntent,
         )
         from .perception import Calibration, GlassesCalibration
+        from .protocol import CONTROL_EVENT
 
         args.output.mkdir(parents=True, exist_ok=True)
         for model in (
@@ -228,6 +229,9 @@ def main() -> None:
             (args.output / f"{model.__name__}.json").write_text(
                 json.dumps(model.model_json_schema(), indent=2) + "\n", encoding="utf-8"
             )
+        (args.output / "ControlEvent.json").write_text(
+            json.dumps(CONTROL_EVENT.json_schema(), indent=2) + "\n", encoding="utf-8"
+        )
     elif args.command == "calibrate-intrinsics":
         from .perception import calibrate_intrinsics
 

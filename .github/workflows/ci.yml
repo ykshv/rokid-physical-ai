@@ -5,8 +5,12 @@ on:
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   python:
+    timeout-minutes: 15
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -17,13 +21,9 @@ jobs:
         with:
           python-version: '3.14'
       - run: uv sync --locked --all-groups
-      - run: uv run ruff check src tests
-      - run: uv run ruff format --check src tests
-      - run: uv run mypy src
-      - run: uv run pytest
-      - run: uv run zensical build --strict
-      - run: uv run python tools/check_publication.py
+      - run: uv run python tools/check.py python docs
   android:
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -31,22 +31,23 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: chmod +x android/gradlew
-      - run: android/gradlew -p android assembleDebug lint --no-daemon
+      - run: python tools/check.py android
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: development-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
   robot:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
-      - run: docker build -f robot_gateway/Dockerfile -t rokid-gateway:ci .
+      - run: python tools/check.py robot
   secrets:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - name: Scan tracked source for private material
-        run: python tools/check_secrets.py
+      - name: Scan source for private material
+        run: python tools/check.py secrets

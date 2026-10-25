@@ -38,6 +38,8 @@ uv run rokid-agent schemas --output dist/schemas
 
 HTTP `/v1/pair` accepts a single-use pairing code. Authenticated `/v1/control` and `/v1/media/{session_id}` WebSockets carry application events and media. Provider errors are reduced to categories before reaching logs or the glasses.
 
+Device control events are validated by `protocol.py`; their JSON schema is generated with the domain schemas. [Protocol invariants](protocol.md) define handshake ownership, preview acknowledgement and commitment ordering. [Operations](operations.md) covers deployment and recovery boundaries.
+
 ## Failure and recovery
 
 The agent persists operations before submitting them. A lost acknowledgement produces `uncertain`, not success or an automatic retry. A restart cancels unconfirmed proposals and marks interrupted execution uncertain. Reconnection does not re-arm the robot.

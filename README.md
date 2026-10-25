@@ -37,6 +37,6 @@ Follow the [setup guide](https://ykshv.github.io/rokid-physical-ai/quickstart/) 
 | Franka Research 3 + Franka Hand | Gateway implementation and software checks; physical validation pending |
 | UFACTORY xArm6 + parallel gripper | Gateway implementation and software checks; physical validation pending |
 
-[Русская инструкция](https://ykshv.github.io/rokid-physical-ai/ru/) · [Add a robot](https://ykshv.github.io/rokid-physical-ai/robots/) · [Contributing](CONTRIBUTING.md)
+[Русская инструкция](https://ykshv.github.io/rokid-physical-ai/ru/) · [Add a robot](https://ykshv.github.io/rokid-physical-ai/robots/) · [Development](docs/development.md) · [Agent instructions](AGENTS.md) · [Contributing](CONTRIBUTING.md)
 
 [Documentation](https://ykshv.github.io/rokid-physical-ai/) · [License](LICENSE)

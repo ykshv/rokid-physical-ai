@@ -20,6 +20,9 @@ nav:
   - Overview: index.md
   - Get started: quickstart.md
   - Architecture: architecture.md
+  - Protocol invariants: protocol.md
+  - Development: development.md
+  - Operations: operations.md
   - Robot integration: robots.md
   - Calibration: calibration.md
   - Verification: verification.md

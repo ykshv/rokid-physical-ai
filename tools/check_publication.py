@@ -5,7 +5,18 @@ from xml.etree import ElementTree
 
 BASE = "https://ykshv.github.io/rokid-physical-ai/"
 site = Path("site")
-for page in ("", "quickstart", "architecture", "robots", "calibration", "verification", "ru"):
+for page in (
+    "",
+    "quickstart",
+    "architecture",
+    "protocol",
+    "development",
+    "operations",
+    "robots",
+    "calibration",
+    "verification",
+    "ru",
+):
     html = (site / page / "index.html").read_text(encoding="utf-8")
     expected = BASE + (page + "/" if page else "")
     assert f'href="{expected}"' in html, f"Missing canonical URL for {page}"

@@ -27,5 +27,7 @@ if(BUILD_TESTING)
   ament_add_gtest(test_policy test/test_policy.cpp)
   target_include_directories(test_policy PRIVATE include)
   target_link_libraries(test_policy nlohmann_json::nlohmann_json)
+  target_compile_definitions(test_policy PRIVATE
+    SCENE_FIXTURE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/scene_validation.json")
 endif()
 ament_package()

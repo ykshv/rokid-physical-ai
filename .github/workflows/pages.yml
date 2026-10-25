@@ -2,7 +2,7 @@ name: Documentation
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'mkdocs.yml', 'pyproject.toml', 'uv.lock', '.github/workflows/pages.yml']
+    paths: ['docs/**', '**/AGENTS.md', 'AGENTS.md', 'CONTRIBUTING.md', 'tools/check*.py', 'mkdocs.yml', 'pyproject.toml', 'uv.lock', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -23,8 +24,7 @@ jobs:
         with:
           python-version: '3.14'
       - run: uv sync --locked --group docs
-      - run: uv run zensical build --strict
-      - run: uv run python tools/check_publication.py
+      - run: uv run python tools/check.py docs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

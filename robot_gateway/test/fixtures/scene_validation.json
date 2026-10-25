@@ -1,0 +1,24 @@
+{
+  "scene": {
+    "version": 1, "frame_id": "robot_base", "revision": "scene_1",
+    "calibration_id": "cal_1", "calibrated": true, "observed_at": 100,
+    "objects": [{"id": "cube", "label": "синий кубик", "center": {"x": 0.35, "y": 0, "z": 0.025},
+      "size": {"x": 0.04, "y": 0.04, "z": 0.05}, "yaw": 0, "grasp_width": 0.04}],
+    "zones": [{"id": "tray", "label": "справа", "center": {"x": 0.5, "y": 0, "z": 0}, "radius": 0.06}]
+  },
+  "cases": [
+    {"name": "valid", "accepted": true, "patch": []},
+    {"name": "uncalibrated is observable", "accepted": true, "patch": [{"op": "replace", "path": "/calibrated", "value": false}]},
+    {"name": "empty workspace", "accepted": true, "patch": [{"op": "replace", "path": "/objects", "value": []}]},
+    {"name": "duplicate identity", "accepted": false, "patch": [{"op": "replace", "path": "/zones/0/id", "value": "cube"}]},
+    {"name": "invalid identity", "accepted": false, "patch": [{"op": "replace", "path": "/revision", "value": "invalid/id"}]},
+    {"name": "object replaced by zone", "accepted": false, "patch": [{"op": "replace", "path": "/objects/0", "value": {"id": "cube", "label": "cube", "center": {"x": 0.35, "y": 0, "z": 0.025}, "radius": 0.06}}]},
+    {"name": "missing label", "accepted": false, "patch": [{"op": "remove", "path": "/objects/0/label"}]},
+    {"name": "nonpositive dimension", "accepted": false, "patch": [{"op": "replace", "path": "/objects/0/size/z", "value": 0}]},
+    {"name": "excessive width", "accepted": false, "patch": [{"op": "replace", "path": "/objects/0/grasp_width", "value": 0.3}]},
+    {"name": "excessive zone", "accepted": false, "patch": [{"op": "replace", "path": "/zones/0/radius", "value": 0.6}]},
+    {"name": "unknown authority field", "accepted": false, "patch": [{"op": "add", "path": "/confirmed", "value": true}]},
+    {"name": "invalid yaw", "accepted": false, "patch": [{"op": "replace", "path": "/objects/0/yaw", "value": "invalid"}]},
+    {"name": "invalid timestamp", "accepted": false, "patch": [{"op": "replace", "path": "/observed_at", "value": null}]}
+  ]
+}

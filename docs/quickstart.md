@@ -74,9 +74,7 @@ For robot tasks also supply `--workspace-calibration` and `--glasses-calibration
 ## Checks
 
 ```sh
-uv run ruff check src tests
-uv run ruff format --check src tests
-uv run mypy src
-uv run pytest
-uv run zensical build --strict
+uv run python tools/check.py
 ```
+
+This is the same check entry point used by CI. See [development](development.md) for Android/ROS profiles and the change-to-check matrix.

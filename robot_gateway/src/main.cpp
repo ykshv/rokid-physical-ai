@@ -23,6 +23,7 @@
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include "policy.hpp"
+#include "journal.hpp"
 // Include Eigen/MoveIt before the HTTP resolver headers, which expose an `_res` macro.
 #include <httplib.h>
 #include <openssl/crypto.h>
@@ -285,11 +286,18 @@ public:
         std::lock_guard lock(mutex_);
         if (busy_ || armed_) { response->success = false; response->message = "stop_first"; return; }
         // Explicit local operator attestation after inspecting the arm and any held object.
+        const auto before = journal_;
         for (auto& record : journal_) if (record.at("state") == "uncertain") {
           record["state"] = "failed";
           record["reason"] = "operator_reconciled_after_physical_inspection";
         }
-        save(); response->success = true; response->message = "reconciled_still_disarmed";
+        try { save(); }
+        catch (const std::exception&) {
+          journal_ = before;
+          response->success = false; response->message = "journal_write_failed_still_uncertain";
+          return;
+        }
+        response->success = true; response->message = "reconciled_still_disarmed";
       });
     watchdog_ = std::jthread([this](std::stop_token stop_token) {
       while (!stop_token.stop_requested()) {
@@ -376,7 +384,13 @@ public:
       rokid::check_request(operation, scene_, now_seconds(), lo_, hi_, width_);
       busy_ = true;
       journal_[id] = {{"operation_id",id}, {"state","executing"}, {"reason",nullptr}, {"request",operation}};
-      save();
+      try {
+        rokid::persist_operation_state(journal_[id], "executing", nullptr, [this] { save(); });
+      } catch (...) {
+        busy_ = false;
+        stop();
+        throw;
+      }
       // Execute only geometry received from the independently authenticated camera producer.
       auto execution = operation;
       execution["scene"] = scene_;
@@ -389,9 +403,10 @@ public:
           state = "uncertain"; reason = error.what(); stop();
         }
         std::lock_guard guard(mutex_);
-        journal_[id]["state"] = state;
-        journal_[id]["reason"] = reason.empty() ? json(nullptr) : json(reason);
-        try { save(); }
+        try {
+          rokid::persist_operation_state(journal_[id], state,
+            reason.empty() ? json(nullptr) : json(reason), [this] { save(); });
+        }
         catch (const std::exception&) {
           stop(); RCLCPP_ERROR(node_->get_logger(), "journal_write_failed_operator_reconciliation_required");
         }

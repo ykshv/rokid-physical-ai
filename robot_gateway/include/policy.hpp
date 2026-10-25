@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <set>
+#include <regex>
 #include <nlohmann/json.hpp>
 
 namespace rokid {
@@ -18,7 +19,26 @@ inline double number(const json& value) {
   return n;
 }
 inline std::array<double, 3> xyz(const json& p) {
+  if (!p.is_object() || p.size() != 3) throw std::runtime_error("invalid_vector");
   return {number(p.at("x")), number(p.at("y")), number(p.at("z"))};
+}
+inline void fields(const json& value, std::initializer_list<std::string> allowed) {
+  if (!value.is_object()) throw std::runtime_error("object_required");
+  for (const auto& item : value.items())
+    if (std::find(allowed.begin(), allowed.end(), item.key()) == allowed.end())
+      throw std::runtime_error("unknown_contract_field");
+}
+inline void identifier(const json& value) {
+  static const std::regex pattern("[a-zA-Z0-9_-]{1,80}");
+  if (!value.is_string() || !std::regex_match(value.get<std::string>(), pattern))
+    throw std::runtime_error("invalid_identifier");
+}
+inline void label(const json& value) {
+  if (!value.is_string()) throw std::runtime_error("invalid_label");
+  const auto& text = value.get_ref<const std::string&>();
+  // JSON parsing validates UTF-8; count code points, not bytes, for Russian labels.
+  auto length = std::count_if(text.begin(), text.end(), [](unsigned char c) { return (c & 0xC0) != 0x80; });
+  if (length < 1 || length > 80) throw std::runtime_error("invalid_label");
 }
 inline bool inside(const json& p, const std::vector<double>& lo, const std::vector<double>& hi) {
   auto v = xyz(p);
@@ -30,6 +50,8 @@ inline json find_id(const json& collection, const std::string& id) {
   throw std::runtime_error("unknown_scene_id");
 }
 inline void check_scene(const json& scene) {
+  fields(scene, {"version", "frame_id", "calibrated", "revision", "calibration_id",
+                 "observed_at", "objects", "zones"});
   if (scene.at("version") != 1 || scene.at("frame_id") != "robot_base" ||
       !scene.at("calibrated").is_boolean() || !scene.at("revision").is_string() ||
       !scene.at("calibration_id").is_string() || !scene.at("objects").is_array() ||
@@ -37,18 +59,29 @@ inline void check_scene(const json& scene) {
       scene.at("zones").empty() || scene.at("zones").size() > 10)
     throw std::runtime_error("invalid_scene");
   number(scene.at("observed_at"));
+  identifier(scene.at("revision"));
+  identifier(scene.at("calibration_id"));
   std::set<std::string> ids;
   for (const auto* collection : {&scene.at("objects"), &scene.at("zones")}) {
     for (const auto& entry : *collection) {
       auto id = entry.at("id").get<std::string>();
-      if (id.empty() || id.size() > 80 || !ids.insert(id).second)
+      identifier(entry.at("id"));
+      label(entry.at("label"));
+      if (!ids.insert(id).second)
         throw std::runtime_error("invalid_scene_id");
       xyz(entry.at("center"));
-      if (entry.contains("size")) {
+      if (collection == &scene.at("objects")) {
+        fields(entry, {"id", "label", "center", "size", "yaw", "grasp_width"});
         auto dims = xyz(entry.at("size"));
-        if (*std::min_element(dims.begin(), dims.end()) <= 0 || number(entry.at("grasp_width")) <= 0)
+        double width = number(entry.at("grasp_width"));
+        if (*std::min_element(dims.begin(), dims.end()) <= 0 || width <= 0 || width > 0.2)
           throw std::runtime_error("invalid_object_geometry");
-      } else if (number(entry.at("radius")) <= 0) throw std::runtime_error("invalid_zone");
+        if (entry.contains("yaw")) number(entry.at("yaw"));
+      } else {
+        fields(entry, {"id", "label", "center", "radius"});
+        double radius = number(entry.at("radius"));
+        if (radius <= 0 || radius > 0.5) throw std::runtime_error("invalid_zone");
+      }
     }
   }
 }

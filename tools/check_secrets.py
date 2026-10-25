@@ -4,7 +4,11 @@ import re
 import subprocess
 from pathlib import Path
 
-paths = subprocess.check_output(["git", "ls-files", "-z"]).decode().split("\0")
+paths = (
+    subprocess.check_output(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+    .decode()
+    .split("\0")
+)
 patterns = [
     re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     re.compile(rb"sk-(?:proj-)?[A-Za-z0-9_-]{40,}"),
@@ -21,4 +25,4 @@ for name in filter(None, paths):
             violations.append(name)
 if violations:
     raise SystemExit("Private material detected in: " + ", ".join(sorted(set(violations))))
-print("Tracked-file private-material check passed")
+print("Tracked and non-ignored new files passed the private-material check")
