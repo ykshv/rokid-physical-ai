@@ -1,0 +1,13 @@
+robot_gateway:
+  ros__parameters:
+    robot: xarm6
+    move_group: xarm6
+    base_frame: link_base
+    gripper_namespace: /xarm
+    hardware_qualified: false
+    workspace_min: [0.25, -0.25, 0.0]
+    workspace_max: [0.65, 0.25, 0.45]
+    max_grasp_width: 0.085
+    gripper_force: 10.0
+    velocity_scale: 0.05
+    acceleration_scale: 0.05

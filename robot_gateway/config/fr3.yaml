@@ -1,0 +1,13 @@
+robot_gateway:
+  ros__parameters:
+    robot: fr3
+    move_group: fr3_arm
+    base_frame: fr3_link0
+    gripper_namespace: /franka_gripper
+    hardware_qualified: false
+    workspace_min: [0.25, -0.25, 0.0]
+    workspace_max: [0.65, 0.25, 0.45]
+    max_grasp_width: 0.08
+    gripper_force: 10.0
+    velocity_scale: 0.05
+    acceleration_scale: 0.05

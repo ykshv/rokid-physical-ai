@@ -1,0 +1,21 @@
+name: Bug report
+description: Report a reproducible behavior or integration problem
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps and tested versions
+      description: Include software and firmware versions; omit credentials, local addresses, serial numbers and raw recordings.
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Verification environment
+      options: [Unit test, Diagnostic device session, Robot simulation, Physical robot]

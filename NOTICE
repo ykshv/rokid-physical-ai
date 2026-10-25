@@ -1,0 +1,7 @@
+Rokid Physical AI
+Copyright 2026 Rokid Physical AI contributors
+
+This repository's original code is licensed under Apache-2.0.
+Dependencies retain their own licenses. No vendor SDK source or model weights
+are bundled in the original application source. The software uses vendor
+interfaces for Android, OpenAI, ROS 2, Franka Robotics, UFACTORY, and RealSense.

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rokid_robot_gateway</name><version>0.1.0</version>
+  <description>Bounded pick/place gateway for wearable physical AI agents.</description>
+  <maintainer email="maintainers@users.noreply.github.com">Rokid Physical AI contributors</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend><depend>rclcpp_action</depend><depend>std_srvs</depend>
+  <depend>moveit_ros_planning_interface</depend><depend>moveit_msgs</depend>
+  <depend>franka_msgs</depend><depend>xarm_msgs</depend><depend>tf2_geometry_msgs</depend>
+  <depend>nlohmann-json3-dev</depend><depend>libssl-dev</depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

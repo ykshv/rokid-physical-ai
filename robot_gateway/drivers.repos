@@ -1,0 +1,9 @@
+repositories:
+  franka_ros2:
+    type: git
+    url: https://github.com/frankarobotics/franka_ros2.git
+    version: 4acc05c01ebfcdf916ee6b3df966df0ad7b2f9ec
+  xarm_ros2:
+    type: git
+    url: https://github.com/xArm-Developer/xarm_ros2.git
+    version: d837f2e17f7f36043103b367fca3af8172626245

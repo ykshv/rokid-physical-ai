@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.py text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.sh text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary

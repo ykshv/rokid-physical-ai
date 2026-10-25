@@ -11,6 +11,32 @@ Rokid Physical AI connects smart glasses to a physical AI agent through voice an
 - **Robot adapters:** a common task interface for different arms and parallel grippers.
 - **Open architecture:** Android client, Python 3.14+ agent, and ROS 2 integration.
 
-Currently in active development.
+**Development preview.** Camera streaming, audio playback, local voice shutdown, and the glasses HUD have been checked on one stock Rokid device. Robot hardware qualification and the complete cloud-assisted manipulation scenario are pending.
+
+```mermaid
+flowchart LR
+    Glasses["Rokid · voice + camera"] <-->|TLS| Agent["Python 3.14+ agent"]
+    Camera["Calibrated RGB-D camera"] --> Gateway["ROS 2 / MoveIt gateway"]
+    Gateway --> Agent
+    Agent -->|Confirmed task| Gateway
+    Gateway --> Arm["FR3 / xArm6"]
+```
+
+Start with the local diagnostic mode; it sends no media to a cloud provider:
+
+```sh
+uv sync --locked --all-groups
+uv run rokid-agent serve --host <COMPUTER_LAN_ADDRESS> --diagnostic
+```
+
+Follow the [setup guide](https://ykshv.github.io/rokid-physical-ai/quickstart/) to install and pair the APK. Opening the application explicitly starts a session. With the local speech model configured, say **«выключись»** to finish.
+
+| Component | Current evidence |
+| --- | --- |
+| Rokid RG-glasses, Android 12 / API 32 | Short device tests; see firmware and limitations in [verification](https://ykshv.github.io/rokid-physical-ai/verification/) |
+| Franka Research 3 + Franka Hand | Gateway implementation and software checks; physical validation pending |
+| UFACTORY xArm6 + parallel gripper | Gateway implementation and software checks; physical validation pending |
+
+[Русская инструкция](https://ykshv.github.io/rokid-physical-ai/ru/) · [Add a robot](https://ykshv.github.io/rokid-physical-ai/robots/) · [Contributing](CONTRIBUTING.md)
 
 [Documentation](https://ykshv.github.io/rokid-physical-ai/) · [License](LICENSE)

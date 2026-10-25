@@ -7,24 +7,32 @@ name = "rokid-physical-ai"
 version = "0.1.0.dev1"
 description = "Voice and gesture interface for robot arms using Rokid smart glasses"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.14"
 license = "Apache-2.0"
 dependencies = [
-  "fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1",
-  "pydantic>=2.10,<3", "httpx>=0.28,<1", "websockets>=15,<16",
-  "cryptography>=44,<47", "numpy>=2.2,<3", "opencv-contrib-python-headless>=4.11,<5",
-  "platformdirs>=4.3,<5", "vosk>=0.3.45,<0.4",
+  "fastapi>=0.162,<1", "uvicorn[standard]>=0.54,<1",
+  "pydantic>=2.14,<3", "httpx>=0.28,<1", "websockets>=15,<16",
+  "cryptography>=46,<47", "numpy>=2.5,<3", "opencv-contrib-python-headless>=4.14,<5",
+  "platformdirs>=4.13,<5", "vosk>=0.3.45,<0.4",
 ]
 
 [project.optional-dependencies]
-realsense = ["pyrealsense2>=2.56,<3"]
+realsense = ["pyrealsense2>=2.59,<3"]
 
 [project.scripts]
 rokid-agent = "rokid_physical_ai.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.3,<10", "pytest-asyncio>=0.25,<2", "ruff>=0.11,<1", "mypy>=1.15,<2"]
-docs = ["mkdocs-material>=9.6,<10"]
+dev = [
+    "pytest>=8.3,<10",
+    "pytest-asyncio>=0.25,<2",
+    "ruff>=0.11,<1",
+    "mypy>=1.15,<2",
+    "httpx2>=2.16.0",
+]
+docs = [
+    "zensical>=0.0.72",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rokid_physical_ai"]
@@ -35,13 +43,13 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 check_untyped_defs = true
 ignore_missing_imports = true
 

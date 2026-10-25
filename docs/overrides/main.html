@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block extrahead %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Rokid Physical AI">
+<meta property="og:title" content="{{ page.title | e }} · Rokid Physical AI">
+<meta property="og:description" content="{{ config.site_description | e }}">
+<meta property="og:url" content="{{ page.canonical_url }}">
+<meta name="twitter:card" content="summary">
+{% endblock %}

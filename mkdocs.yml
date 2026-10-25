@@ -1,0 +1,26 @@
+site_name: Rokid Physical AI
+site_description: Voice and gesture interface for robot arms using Rokid smart glasses, Python 3.14, and ROS 2.
+site_url: https://ykshv.github.io/rokid-physical-ai/
+repo_url: https://github.com/ykshv/rokid-physical-ai
+repo_name: ykshv/rokid-physical-ai
+copyright: Rokid Physical AI contributors
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    scheme: slate
+    primary: teal
+    accent: lime
+  features: [navigation.sections, content.code.copy, navigation.top]
+plugins: [search]
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+nav:
+  - Overview: index.md
+  - Get started: quickstart.md
+  - Architecture: architecture.md
+  - Robot integration: robots.md
+  - Calibration: calibration.md
+  - Verification: verification.md
+  - Русский: ru.md
