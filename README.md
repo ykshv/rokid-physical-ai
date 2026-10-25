@@ -2,12 +2,15 @@
 
 **Voice and gesture interface for robot arms, using Rokid smart glasses.**
 
-Development preview. Independent implementation inspired by [EDITH](https://project-edith.github.io/); not affiliated with Rokid, Franka Robotics, UFACTORY, or the EDITH authors.
+Point at an object. Say what you want done. Let your robot handle the movement.
 
-The intended interaction is simple: point at an object, say “put this there,” confirm the task by voice, and receive the robot's execution result through your glasses. A stock-firmware Android app connects to an agent on your computer. A separate robot gateway owns physical motion.
+Rokid Physical AI connects smart glasses to a physical AI agent through voice and first-person vision. The agent understands the task, asks for confirmation, and coordinates a robot arm through a dedicated motion controller.
 
-Reference profiles: Franka Research 3 with Franka Hand, and UFACTORY xArm6 with a parallel gripper. Physical hardware qualification is pending. Panda is not interchangeable with FR3.
+- **Wearable interface:** voice, camera, and audio feedback on stock Rokid firmware.
+- **Spatial context:** calibrated tabletop perception connects your gesture to an object.
+- **Robot adapters:** a common task interface for different arms and parallel grippers.
+- **Open architecture:** Android client, Python 3.14+ agent, and ROS 2 integration.
 
-**Status:** implementation and verification in progress; no physical manipulation, gaze tracking, or measured success rate is claimed.
+Currently in active development.
 
-[Documentation](https://ykshv.github.io/rokid-physical-ai/) · [License](LICENSE) · [EDITH paper](https://arxiv.org/abs/2606.10276)
+[Documentation](https://ykshv.github.io/rokid-physical-ai/) · [License](LICENSE)
